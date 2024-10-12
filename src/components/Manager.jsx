@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import {v4 as uuid} from 'uuid';
+import { v4 as uuid } from 'uuid';
 
 const Manager = () => {
     const ref = useRef()
@@ -9,15 +9,16 @@ const Manager = () => {
     const [form, setform] = useState({ site: "", username: "", password: "" })
     const [passwordArray, setPasswordArray] = useState([])
 
+    const getPasswords = async () => {
+        let req = await fetch('http://localhost:3000/')
+        let passwords = await req.json()
+        console.log(passwords)
+        setPasswordArray(passwords)
+    }
+
     useEffect(() => {
-        let passwords = localStorage.getItem('passwords');
-        if (passwords) {
-            setPasswordArray(JSON.parse(passwords))
-        }
-
+        getPasswords()
     }, [])
-
-
     const showPassword = () => {
         passwordRef.current.type = "password"
         if (ref.current.src.includes('/icons/eyecross.png')) {
@@ -30,14 +31,20 @@ const Manager = () => {
         }
     }
 
-    const savePassword = () => {
+    const savePassword = async () => {
         // if (form.site === "" || form.username === "" || form.password === "") {
         //     alert('Please fill all the fields')
         // }
-        if (form.site.length >3 && form.username.length>3 && form.password.length>3) {
-            setPasswordArray([...passwordArray, {...form,id:uuid()}])
-            localStorage.setItem("passwords", JSON.stringify([...passwordArray, {...form,id:uuid()}]))
-            console.log([...passwordArray,form])
+        if (form.site.length > 3 && form.username.length > 3 && form.password.length > 3) {
+            setPasswordArray([...passwordArray, { ...form, id: uuid() }])
+
+            let res=await fetch("http://localhost:3000/",{
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({ ...form, id: uuid() })
+            })
             setform({ site: "", username: "", password: "" })
             toast('Password Saved', {
                 position: "top-right",
@@ -62,16 +69,24 @@ const Manager = () => {
                 progress: undefined,
                 theme: "light",
                 transition: Bounce,
-            });            
+            });
         }
     }
 
-    const deletePassword = (id) => {
-        console.log("Deleting password with id ",id)
-        let c=confirm("Are you sure you want to delete this password ?")
-        if(c){
-            setPasswordArray(passwordArray.filter(item=>item.id!==id))
-            localStorage.setItem("passwords", JSON.stringify(passwordArray.filter(item=>item.id!==id)))
+    const deletePassword = async (id) => {
+        console.log("Deleting password with id ", id)
+        let c = confirm("Are you sure you want to delete this password ?")
+        if (c) {
+            setPasswordArray(passwordArray.filter(item => item.id !== id))
+            // localStorage.setItem("passwords", JSON.stringify(passwordArray.filter(item => item.id !== id)))
+
+            let res=await fetch("http://localhost:3000/",{
+                method:'DELETE',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({id})
+            })
             toast('Password deleted successfully !', {
                 position: "top-right",
                 autoClose: 5000,
@@ -85,10 +100,17 @@ const Manager = () => {
             });
         }
     }
-    const editPassword=(id)=>{
-        console.log("Editing password with id ",id)
-        setform(passwordArray.filter(i=>i.id===id)[0])
-        setPasswordArray(passwordArray.filter(item=>item.id!==id))
+    const editPassword = async (id) => {
+        console.log("Editing password with id ", id)
+        setform(passwordArray.filter(i => i.id === id)[0])
+        setPasswordArray(passwordArray.filter(item => item.id !== id))
+        let res=await fetch("http://localhost:3000/",{
+            method:'DELETE',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify({id})
+        })
     }
     const handleChange = (e) => {
         setform({ ...form, [e.target.name]: e.target.value })
@@ -122,7 +144,7 @@ const Manager = () => {
                 pauseOnHover
                 theme="light"
                 transition="Bounce" />
-           
+
             {/* <div class="absolute top-0 z-[-2] h-screen w-screen bg-gray-50 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div> */}
             <div className="absolute inset-0 -z-10 h-full w-full bg-gray-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"><div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-blue-500 opacity-20 blur-[100px]"></div></div>
             <div className="p-2 md:mycontainer min-h-[82.5vh]">
@@ -210,18 +232,18 @@ const Manager = () => {
 
                                 </td>
                                 <td className='py-2 border border-white text-center'>
-                                    <span className='cursor-pointer mx-1' onClick={() => {editPassword(item.id)}}>
+                                    <span className='cursor-pointer mx-1' onClick={() => { editPassword(item.id) }}>
                                         <lord-icon
                                             src="https://cdn.lordicon.com/gwlusjdu.json"
                                             trigger="hover"
-                                            style={{"width": "25px","height":"25px"}}>
+                                            style={{ "width": "25px", "height": "25px" }}>
                                         </lord-icon>
                                     </span>
-                                    <span className='cursor-pointer mx-1' onClick={() => {deletePassword(item.id)}}>
+                                    <span className='cursor-pointer mx-1' onClick={() => { deletePassword(item.id) }}>
                                         <lord-icon
                                             src="https://cdn.lordicon.com/skkahier.json"
                                             trigger="hover"
-                                            style={{"width": "25px","height":"25px"}}>
+                                            style={{ "width": "25px", "height": "25px" }}>
                                         </lord-icon>
                                     </span>
 
